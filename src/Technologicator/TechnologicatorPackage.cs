@@ -46,11 +46,10 @@ namespace BISim.Technologicator
 
         private IVsEditorAdaptersFactoryService _adapters;
 
-
         private string _selectedTechnology;
-
         private string _chooseOrigText;
         private OleMenuCommand _chooseCommandItem;
+        private bool _includeEndIfComment;
 
         /// <summary>
         /// Default constructor of the package.
@@ -63,7 +62,8 @@ namespace BISim.Technologicator
         {
             Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering constructor for: {0}", this.ToString()));
             _selectedTechnology = "";
-            _chooseOrigText = "TC - Choose";
+            _chooseOrigText = "Choose";
+            _includeEndIfComment = false;
         }
 
 
@@ -98,18 +98,20 @@ namespace BISim.Technologicator
 
                 CommandID addCommandID = new CommandID(GuidList.guidTechnologicatorCmdSet, (int)PkgCmdIDList.cmdidTechnologicatorAdd);
                 OleMenuCommand addItem = new OleMenuCommand(AddTechCallback, addCommandID);
-                addItem.BeforeQueryStatus += new EventHandler(TechButtonsBeforeStatusQueryCallback);
                 mcs.AddCommand(addItem);
 
                 CommandID changeCommandID = new CommandID(GuidList.guidTechnologicatorCmdSet, (int)PkgCmdIDList.cmdidTechnologicatorChange);
                 OleMenuCommand changeItem = new OleMenuCommand(ChangeTechCallback, changeCommandID);
-                changeItem.BeforeQueryStatus += new EventHandler(TechButtonsBeforeStatusQueryCallback);
                 mcs.AddCommand(changeItem);
 
                 CommandID removeCommandID = new CommandID(GuidList.guidTechnologicatorCmdSet, (int)PkgCmdIDList.cmdidTechnologicatorRemove);
                 OleMenuCommand removeItem = new OleMenuCommand(RemoveTechCallback, removeCommandID);
-                removeItem.BeforeQueryStatus += new EventHandler(TechButtonsBeforeStatusQueryCallback);
                 mcs.AddCommand(removeItem);
+
+                CommandID endifCommandID = new CommandID(GuidList.guidTechnologicatorCmdSet, (int)PkgCmdIDList.cmdidTechnologicatorEndif);
+                OleMenuCommand endifItem = new OleMenuCommand(EndIfCallback, endifCommandID);
+                endifItem.BeforeQueryStatus += new EventHandler(EndifBeforeStatusQueryCallback);
+                mcs.AddCommand(endifItem);
             }
 
             _dte = (DTE)GetService(typeof(DTE));
@@ -120,15 +122,6 @@ namespace BISim.Technologicator
 
         }
         #endregion
-
-        private void TechButtonsBeforeStatusQueryCallback(object sender, EventArgs e)
-        {
-            var command = sender as OleMenuCommand;
-            if (command != null)
-            {
-                command.Enabled = _selectedTechnology.Length > 0;                  
-            }
-        }
 
 
         private void ChooseBeforeStatusQueryCallback(object sender, EventArgs e)
@@ -143,6 +136,15 @@ namespace BISim.Technologicator
                     chooseCommand.Text = _chooseOrigText;
             }
         }
+
+        private void EndifBeforeStatusQueryCallback(object sender, EventArgs e)
+        {
+            var chooseCommand = sender as OleMenuCommand;
+            if (chooseCommand != null)
+            {
+                chooseCommand.Checked = _includeEndIfComment;
+            }
+        }        
 
         private void IssueTrackingWebCallback(object sender, EventArgs e)
         {
@@ -172,39 +174,48 @@ namespace BISim.Technologicator
         private void ChooseTechCallback(object sender, EventArgs e)
         {
             EnvDTE.TextSelection ts = _dte.ActiveWindow.Selection as EnvDTE.TextSelection;
-            SelectWord(ts);
             _selectedTechnology = ts.Text;
         }
 
         private void AddTechCallback(object sender, EventArgs e)
         {
+            SelectLines();
+
             IVsTextView textView;
             if (_textManager.GetActiveView(1, null, out textView) == 0)
             {
                 TextSpan[] span = new TextSpan[1];
                 int selStart, temp;
-               
+
                 textView.GetSelectionSpan(span);
                 textView.GetNearestPosition(span[0].iStartLine, span[0].iStartIndex, out selStart, out temp);
 
                 IVsTextLines lines;
                 if (textView.GetBuffer(out lines) == 0)
                 {
-                
+
                     var linesTextBuffer = lines as IVsTextBuffer;
 
                     ITextBuffer buffer = _adapters.GetDataBuffer(linesTextBuffer);
                     ITextEdit edit = buffer.CreateEdit();
-                    string text = Environment.NewLine+"#if " + _selectedTechnology + Environment.NewLine + Environment.NewLine +"#endif // " + _selectedTechnology.Substring(1) + Environment.NewLine;
+                    string text = "#if " + _selectedTechnology + Environment.NewLine + Environment.NewLine;
+
+                    if (_includeEndIfComment)
+                        text += "#endif // " + _selectedTechnology.Substring(1) + Environment.NewLine;
+                    else
+                        text += "#endif" + Environment.NewLine;
+
                     edit.Insert(selStart, text);
                     edit.Apply();
-                }               
+                }
 
             }
         }
 
         private void ChangeTechCallback(object sender, EventArgs e)
         {
+            SelectLines();
+
             IVsTextView textView;
             if (_textManager.GetActiveView(1, null, out textView) == 0)
             {
@@ -231,8 +242,12 @@ namespace BISim.Technologicator
                     string text = "#if " + _selectedTechnology + Environment.NewLine +
                         currentCode + Environment.NewLine +
                         "#else" + Environment.NewLine +
-                        currentCode + Environment.NewLine +
-                        "#endif // " + _selectedTechnology.Substring(1) + Environment.NewLine;
+                        currentCode + Environment.NewLine;
+
+                    if (_includeEndIfComment)
+                        text += "#endif // " + _selectedTechnology.Substring(1) + Environment.NewLine;
+                    else
+                        text += "#endif" + Environment.NewLine;
 
                     edit.Insert(selStart, text);
                     edit.Apply();
@@ -242,6 +257,7 @@ namespace BISim.Technologicator
 
         private void RemoveTechCallback(object sender, EventArgs e)
         {
+            SelectLines();
 
             IVsTextView textView;
             if (_textManager.GetActiveView(1, null, out textView) == 0)
@@ -266,12 +282,51 @@ namespace BISim.Technologicator
                     edit.Delete(selStart, selEnd - selStart);
 
                     string text = "#if !" + _selectedTechnology + Environment.NewLine +
-                        currentCode + Environment.NewLine +
-                        "#endif // !" + _selectedTechnology.Substring(1) + Environment.NewLine;
+                        currentCode + Environment.NewLine;
+
+                    if (_includeEndIfComment)
+                        text += "#endif // !" + _selectedTechnology.Substring(1) + Environment.NewLine;
+                    else
+                        text += "#endif" + Environment.NewLine;
 
                     edit.Insert(selStart, text);
                     edit.Apply();
                 }
+            }
+        }
+
+        private void EndIfCallback(object sender, EventArgs e)
+        {
+            _includeEndIfComment = !_includeEndIfComment;
+        }
+
+        private void SelectLines()
+        {
+            EnvDTE.TextSelection ts = _dte.ActiveWindow.Selection as EnvDTE.TextSelection;
+
+            if (ts.IsEmpty)
+            {
+                ts.SelectLine();
+            }
+            else 
+            {
+                int startLine = ts.AnchorPoint.Line;
+                int endLine = ts.ActivePoint.Line;
+
+                if (endLine < startLine)
+                {
+                    int temp = startLine;
+                    startLine = endLine;
+                    endLine = temp;
+                    ts.SwapAnchor();
+                }
+
+                ts.EndOfLine(true);
+                int endChar = ts.ActivePoint.LineCharOffset;
+
+
+                ts.GotoLine(startLine, true);
+                ts.MoveToLineAndOffset(endLine, endChar, true);
             }
         }
 

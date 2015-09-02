@@ -20,10 +20,6 @@
   <!--This header contains the command ids for the menus provided by the shell. -->
   <Extern href="vsshlids.h"/>
 
-
-
-
-
   <!--The Commands section is where we the commands, menus and menu groups are defined.
       This section uses a Guid to identify the package that provides the command defined inside it. -->
   <Commands package="guidTechnologicatorPkg">
@@ -34,6 +30,16 @@
     called "command set" and is used to group different command inside a logically related  
     group; your package should define its own command set in order to avoid collisions  
     with command ids defined by other packages. -->
+    
+    <Menus>
+      <Menu guid="guidTechnologicatorCmdSet" id="TechnologicatorMenu" priority="0x0600" type="Menu">
+        <Parent guid="guidTechnologicatorCmdSet" id="CtxMenuGroup"/>
+        <Strings>
+          <ButtonText>Technologicator</ButtonText>
+          <CommandName>Technologicator</CommandName>
+        </Strings>
+      </Menu>
+    </Menus>
 
     
     <!-- In this section you can define new menu groups. A menu group is a container for 
@@ -41,13 +47,15 @@
          group as the part of a menu contained between two lines. The parent of a group 
          must be a menu. -->
     <Groups>
-
-      <Group guid="guidTechnologicatorCmdSet" id="MyMenuGroup" priority="0x0600">
+      <Group guid="guidTechnologicatorCmdSet" id="TechnologicatorMenuGroup" priority="0x0600">
+        <Parent guid="guidTechnologicatorCmdSet" id="TechnologicatorMenu"/>
+      </Group>
+      <Group guid="guidTechnologicatorCmdSet" id="CtxMenuGroup" priority="0x0600">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
       </Group>
-      
-
-
+      <Group guid="guidTechnologicatorCmdSet" id="TechnologicatorMenuSettingsGroup" priority="0x0700">
+        <Parent guid="guidTechnologicatorCmdSet" id="TechnologicatorMenu"/>
+      </Group>
     </Groups>
     
     <!--Buttons section. -->
@@ -63,43 +71,48 @@
           If you do not want an image next to your command, remove the Icon node /> -->
 
       <Button guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorOpenITT" priority="0x0100" type="Button">
-        <Parent guid="guidTechnologicatorCmdSet" id="MyMenuGroup" />
+        <Parent guid="guidTechnologicatorCmdSet" id="TechnologicatorMenuGroup" />
         <Strings>
-          <ButtonText>TC - Open in Issue Tracker</ButtonText>
+          <ButtonText>Open in Issue Tracker</ButtonText>
         </Strings>
       </Button>
 
       <Button guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorChoose" priority="0x0100" type="Button">
-        <Parent guid="guidTechnologicatorCmdSet" id="MyMenuGroup" />
+        <Parent guid="guidTechnologicatorCmdSet" id="TechnologicatorMenuGroup" />
         <CommandFlag>TextChanges</CommandFlag>
         <Strings>
-          <ButtonText>TC - Choose</ButtonText>
+          <ButtonText>Choose</ButtonText>
         </Strings>        
       </Button>
 
       <Button guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorAdd" priority="0x0100" type="Button">
-        <Parent guid="guidTechnologicatorCmdSet" id="MyMenuGroup" />
-        <CommandFlag>DefaultDisabled</CommandFlag>
+        <Parent guid="guidTechnologicatorCmdSet" id="TechnologicatorMenuGroup" />
         <Strings>
-          <ButtonText>TC - Add</ButtonText>
+          <ButtonText>Add</ButtonText>
         </Strings>
       </Button>
 
       <Button guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorChange" priority="0x0100" type="Button">
-        <Parent guid="guidTechnologicatorCmdSet" id="MyMenuGroup" />
-        <CommandFlag>DefaultDisabled</CommandFlag>
+        <Parent guid="guidTechnologicatorCmdSet" id="TechnologicatorMenuGroup" />
         <Strings>
-          <ButtonText>TC - Change</ButtonText>
+          <ButtonText>Change</ButtonText>
         </Strings>
       </Button>
 
       <Button guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorRemove" priority="0x0100" type="Button">
-        <Parent guid="guidTechnologicatorCmdSet" id="MyMenuGroup" />
-        <CommandFlag>DefaultDisabled</CommandFlag>
+        <Parent guid="guidTechnologicatorCmdSet" id="TechnologicatorMenuGroup" />
         <Strings>
-          <ButtonText>TC - Remove</ButtonText>
+          <ButtonText>Remove</ButtonText>
         </Strings>
       </Button>
+
+      <Button guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorEndif" priority="0x0100" type="Button">
+        <Parent guid="guidTechnologicatorCmdSet" id="TechnologicatorMenuSettingsGroup" />
+        <Strings>
+          <ButtonText>Insert endif comment</ButtonText>
+        </Strings>
+      </Button>
+      
     </Buttons>
   </Commands>
 
@@ -119,12 +132,16 @@
     <!-- This is the guid used to group the menu commands together -->
     <GuidSymbol name="guidTechnologicatorCmdSet" value="{1a20bab1-9d91-46e2-baa0-9b74ea23835d}">
 
-      <IDSymbol name="MyMenuGroup" value="0x1020" />
+      <IDSymbol name="TechnologicatorMenu" value="0x1020" />
+      <IDSymbol name="CtxMenuGroup" value="0x1021" />
+      <IDSymbol name="TechnologicatorMenuGroup" value="0x1022" />
+      <IDSymbol name="TechnologicatorMenuSettingsGroup" value="0x1023" />      
       <IDSymbol name="cmdidTechnologicatorOpenITT" value="0x0100" />
       <IDSymbol name="cmdidTechnologicatorChoose" value="0x0200" />
       <IDSymbol name="cmdidTechnologicatorAdd" value="0x0300" />
       <IDSymbol name="cmdidTechnologicatorChange" value="0x0400" />
       <IDSymbol name="cmdidTechnologicatorRemove" value="0x0500" />
+      <IDSymbol name="cmdidTechnologicatorEndif" value="0x0600" />
     </GuidSymbol>    
     
   </Symbols>
