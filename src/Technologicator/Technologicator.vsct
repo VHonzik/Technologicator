@@ -1,0 +1,132 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <!--  This is the file that defines the actual layout and type of the commands.
+        It is divided in different sections (e.g. command definition, command
+        placement, ...), with each defining a specific set of properties.
+        See the comment before each section for more details about how to
+        use it. -->
+
+  <!--  The VSCT compiler (the tool that translates this file into the binary 
+        format that VisualStudio will consume) has the ability to run a preprocessor 
+        on the vsct file; this preprocessor is (usually) the C++ preprocessor, so 
+        it is possible to define includes and macros with the same syntax used 
+        in C++ files. Using this ability of the compiler here, we include some files 
+        defining some of the constants that we will use inside the file. -->
+
+  <!--This is the file that defines the IDs for all the commands exposed by VisualStudio. -->
+  <Extern href="stdidcmd.h"/>
+
+  <!--This header contains the command ids for the menus provided by the shell. -->
+  <Extern href="vsshlids.h"/>
+
+
+
+
+
+  <!--The Commands section is where we the commands, menus and menu groups are defined.
+      This section uses a Guid to identify the package that provides the command defined inside it. -->
+  <Commands package="guidTechnologicatorPkg">
+    <!-- Inside this section we have different sub-sections: one for the menus, another  
+    for the menu groups, one for the buttons (the actual commands), one for the combos 
+    and the last one for the bitmaps used. Each element is identified by a command id that  
+    is a unique pair of guid and numeric identifier; the guid part of the identifier is usually  
+    called "command set" and is used to group different command inside a logically related  
+    group; your package should define its own command set in order to avoid collisions  
+    with command ids defined by other packages. -->
+
+    
+    <!-- In this section you can define new menu groups. A menu group is a container for 
+         other menus or buttons (commands); from a visual point of view you can see the 
+         group as the part of a menu contained between two lines. The parent of a group 
+         must be a menu. -->
+    <Groups>
+
+      <Group guid="guidTechnologicatorCmdSet" id="MyMenuGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
+      </Group>
+      
+
+
+    </Groups>
+    
+    <!--Buttons section. -->
+    <!--This section defines the elements the user can interact with, like a menu command or a button 
+        or combo box in a toolbar. -->
+    <Buttons>
+      <!--To define a menu group you have to specify its ID, the parent menu and its display priority. 
+          The command is visible and enabled by default. If you need to change the visibility, status, etc, you can use
+          the CommandFlag node.
+          You can add more than one CommandFlag node e.g.:
+              <CommandFlag>DefaultInvisible</CommandFlag>
+              <CommandFlag>DynamicVisibility</CommandFlag>
+          If you do not want an image next to your command, remove the Icon node /> -->
+
+      <Button guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorOpenITT" priority="0x0100" type="Button">
+        <Parent guid="guidTechnologicatorCmdSet" id="MyMenuGroup" />
+        <Strings>
+          <ButtonText>TC - Open in Issue Tracker</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorChoose" priority="0x0100" type="Button">
+        <Parent guid="guidTechnologicatorCmdSet" id="MyMenuGroup" />
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText>TC - Choose</ButtonText>
+        </Strings>        
+      </Button>
+
+      <Button guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorAdd" priority="0x0100" type="Button">
+        <Parent guid="guidTechnologicatorCmdSet" id="MyMenuGroup" />
+        <CommandFlag>DefaultDisabled</CommandFlag>
+        <Strings>
+          <ButtonText>TC - Add</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorChange" priority="0x0100" type="Button">
+        <Parent guid="guidTechnologicatorCmdSet" id="MyMenuGroup" />
+        <CommandFlag>DefaultDisabled</CommandFlag>
+        <Strings>
+          <ButtonText>TC - Change</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorRemove" priority="0x0100" type="Button">
+        <Parent guid="guidTechnologicatorCmdSet" id="MyMenuGroup" />
+        <CommandFlag>DefaultDisabled</CommandFlag>
+        <Strings>
+          <ButtonText>TC - Remove</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
+  </Commands>
+
+  <KeyBindings>
+    <KeyBinding guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorOpenITT" editor="guidVSStd97" key1="J" mod1="ALT"/>
+    <KeyBinding guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorChoose" editor="guidVSStd97" key1="C" mod1="ALT"/>
+    <KeyBinding guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorAdd" editor="guidVSStd97" key1="A" mod1="ALT"/>
+    <KeyBinding guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorChange" editor="guidVSStd97" key1="H" mod1="ALT"/>
+    <KeyBinding guid="guidTechnologicatorCmdSet" id="cmdidTechnologicatorRemove" editor="guidVSStd97" key1="R" mod1="ALT"/>
+  </KeyBindings>
+
+
+  <Symbols>
+    <!-- This is the package guid. -->
+    <GuidSymbol name="guidTechnologicatorPkg" value="{97b299aa-f3d1-4c5d-bf2f-918731fffb9a}" />
+    
+    <!-- This is the guid used to group the menu commands together -->
+    <GuidSymbol name="guidTechnologicatorCmdSet" value="{1a20bab1-9d91-46e2-baa0-9b74ea23835d}">
+
+      <IDSymbol name="MyMenuGroup" value="0x1020" />
+      <IDSymbol name="cmdidTechnologicatorOpenITT" value="0x0100" />
+      <IDSymbol name="cmdidTechnologicatorChoose" value="0x0200" />
+      <IDSymbol name="cmdidTechnologicatorAdd" value="0x0300" />
+      <IDSymbol name="cmdidTechnologicatorChange" value="0x0400" />
+      <IDSymbol name="cmdidTechnologicatorRemove" value="0x0500" />
+    </GuidSymbol>    
+    
+  </Symbols>
+
+</CommandTable>
