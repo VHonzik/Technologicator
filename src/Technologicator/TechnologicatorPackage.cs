@@ -78,12 +78,12 @@ namespace BISim.Technologicator
         /// </summary>
         protected override void Initialize()
         {
-            Debug.WriteLine (string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", this.ToString()));
+            Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", this.ToString()));
             base.Initialize();
 
             // Add our command handlers for menu (commands must exist in the .vsct file)
             OleMenuCommandService mcs = GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
-            if ( null != mcs )
+            if (null != mcs)
             {
                 // Create the command for the menu item.
 
@@ -144,7 +144,7 @@ namespace BISim.Technologicator
             {
                 chooseCommand.Checked = _includeEndIfComment;
             }
-        }        
+        }
 
         private void IssueTrackingWebCallback(object sender, EventArgs e)
         {
@@ -156,7 +156,7 @@ namespace BISim.Technologicator
                 return;
 
             SelectWord(ts);
-                
+
             if (ts.Text.StartsWith("[") && ts.Text.EndsWith("]"))
             {
                 OpenTaskInBrowser(ProcessBracketedTaskName(ts.Text));
@@ -177,6 +177,29 @@ namespace BISim.Technologicator
             _selectedTechnology = ts.Text;
         }
 
+        private string GetSelectedTechnology(bool not = false)
+        {
+            string exclamation = not ? "!" : "";
+
+            if (_selectedTechnology.Length > 0)
+            {
+                return exclamation + _selectedTechnology;
+            }
+
+            return exclamation + "1 // TEMPORARY, IF YOU SEE THIS IN PRODUCTION CODE, SOMEONE SCREW UP";
+        }
+
+        private string GetSelectedTechnologyComment(bool not = false)
+        {
+            if (_selectedTechnology.Length > 0)
+            {
+                string exclamation = not ? "!" : "";
+                return " // " + exclamation + _selectedTechnology.Substring(1);
+            }
+
+            return "";
+        }
+
         private bool GetBufferAndSelection(out ITextBuffer textBuffer, out int selectionStart, out int selectionEnd, out string selectedCode, out bool emptySelection)
         {
             emptySelection = SelectLines();
@@ -185,7 +208,7 @@ namespace BISim.Technologicator
 
             IVsTextView textView;
             if (_textManager.GetActiveView(1, null, out textView) == 0)
-            { 
+            {
                 TextSpan[] span = new TextSpan[1];
 
                 int temp;
@@ -226,10 +249,10 @@ namespace BISim.Technologicator
 
                 if (emptySelection)
                 {
-                    string text = "#if " + _selectedTechnology + Environment.NewLine + Environment.NewLine;
+                    string text = "#if " + GetSelectedTechnology() + Environment.NewLine + Environment.NewLine;
 
                     if (_includeEndIfComment)
-                        text += "#endif // " + _selectedTechnology.Substring(1) + Environment.NewLine;
+                        text += "#endif" + GetSelectedTechnologyComment() + Environment.NewLine;
                     else
                         text += "#endif" + Environment.NewLine;
 
@@ -238,13 +261,13 @@ namespace BISim.Technologicator
                 }
                 else
                 {
-                    string text = "#if " + _selectedTechnology + Environment.NewLine +
+                    string text = "#if " + GetSelectedTechnology() + Environment.NewLine +
                         currentCode + Environment.NewLine;
 
                     if (_includeEndIfComment)
-                        text += "#endif // " + _selectedTechnology.Substring(1) + Environment.NewLine;
+                        text += "#endif" + GetSelectedTechnologyComment();
                     else
-                        text += "#endif" + Environment.NewLine;
+                        text += "#endif";
 
                     edit.Delete(selStart, selEnd - selStart);
                     edit.Insert(selStart, text);
@@ -262,22 +285,42 @@ namespace BISim.Technologicator
             bool emptySelection;
 
             if (GetBufferAndSelection(out buffer, out selStart, out selEnd, out currentCode, out emptySelection))
-            {            
+            {
                 ITextEdit edit = buffer.CreateEdit();
                 edit.Delete(selStart, selEnd - selStart);
 
-                string text = "#if " + _selectedTechnology + Environment.NewLine +
+                string text;
+
+                if (emptySelection)
+                {
+                    text = "#if " + GetSelectedTechnology() + Environment.NewLine +
+                     currentCode +
+                    "#else" + Environment.NewLine +
+                    currentCode;
+
+                    if (_includeEndIfComment)
+                        text += "#endif" + GetSelectedTechnologyComment();
+                    else
+                        text += "#endif";
+
+                    text += Environment.NewLine;
+
+                }
+                else
+                {
+                    text = "#if " + GetSelectedTechnology() + Environment.NewLine +
                     currentCode + Environment.NewLine +
                     "#else" + Environment.NewLine +
                     currentCode + Environment.NewLine;
 
-                if (_includeEndIfComment)
-                    text += "#endif // " + _selectedTechnology.Substring(1) + Environment.NewLine;
-                else
-                    text += "#endif" + Environment.NewLine;
+                    if (_includeEndIfComment)
+                        text += "#endif" + GetSelectedTechnologyComment();
+                    else
+                        text += "#endif";
+                }
 
                 edit.Insert(selStart, text);
-                edit.Apply();          
+                edit.Apply();
             }
         }
 
@@ -293,13 +336,29 @@ namespace BISim.Technologicator
                 ITextEdit edit = buffer.CreateEdit();
                 edit.Delete(selStart, selEnd - selStart);
 
-                string text = "#if !" + _selectedTechnology + Environment.NewLine +
-                    currentCode + Environment.NewLine;
+                string text;
+                if (emptySelection)
+                {
+                    text = "#if " + GetSelectedTechnology(true) + Environment.NewLine +
+                        currentCode;
 
-                if (_includeEndIfComment)
-                    text += "#endif // !" + _selectedTechnology.Substring(1) + Environment.NewLine;
+                    if (_includeEndIfComment)
+                        text += "#endif" + GetSelectedTechnologyComment(true);
+                    else
+                        text += "#endif";
+
+                    text += Environment.NewLine;
+                }
                 else
-                    text += "#endif" + Environment.NewLine;
+                {
+                    text = "#if " + GetSelectedTechnology(true) + Environment.NewLine +
+                        currentCode + Environment.NewLine;
+
+                    if (_includeEndIfComment)
+                        text += "#endif" + GetSelectedTechnologyComment(true);
+                    else
+                        text += "#endif";
+                }
 
                 edit.Insert(selStart, text);
                 edit.Apply();
@@ -321,7 +380,7 @@ namespace BISim.Technologicator
                 ts.SelectLine();
                 return true;
             }
-            else 
+            else
             {
                 int startLine = ts.AnchorPoint.Line;
                 int endLine = ts.ActivePoint.Line;
