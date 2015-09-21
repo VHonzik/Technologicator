@@ -177,27 +177,55 @@ namespace BISim.Technologicator
             _selectedTechnology = ts.Text;
         }
 
-        private void AddTechCallback(object sender, EventArgs e)
+        private bool GetBufferAndSelection(out ITextBuffer textBuffer, out int selectionStart, out int selectionEnd, out string selectedCode, out bool emptySelection)
         {
-            SelectLines();
+            emptySelection = SelectLines();
+
+            textBuffer = null;
 
             IVsTextView textView;
             if (_textManager.GetActiveView(1, null, out textView) == 0)
-            {
+            { 
                 TextSpan[] span = new TextSpan[1];
-                int selStart, temp;
+
+                int temp;
 
                 textView.GetSelectionSpan(span);
-                textView.GetNearestPosition(span[0].iStartLine, span[0].iStartIndex, out selStart, out temp);
+                textView.GetNearestPosition(span[0].iStartLine, span[0].iStartIndex, out selectionStart, out temp);
+                textView.GetNearestPosition(span[0].iEndLine, span[0].iEndIndex, out selectionEnd, out temp);
 
                 IVsTextLines lines;
                 if (textView.GetBuffer(out lines) == 0)
                 {
-
                     var linesTextBuffer = lines as IVsTextBuffer;
 
-                    ITextBuffer buffer = _adapters.GetDataBuffer(linesTextBuffer);
-                    ITextEdit edit = buffer.CreateEdit();
+                    textBuffer = _adapters.GetDataBuffer(linesTextBuffer);
+                    selectedCode = textBuffer.CurrentSnapshot.GetText(selectionStart, selectionEnd - selectionStart);
+
+                    return true;
+                }
+            }
+
+            selectionStart = 0;
+            selectionEnd = 0;
+            selectedCode = "";
+
+            return false;
+        }
+
+        private void AddTechCallback(object sender, EventArgs e)
+        {
+            ITextBuffer buffer;
+            int selStart, selEnd;
+            string currentCode;
+            bool emptySelection;
+
+            if (GetBufferAndSelection(out buffer, out selStart, out selEnd, out currentCode, out emptySelection))
+            {
+                ITextEdit edit = buffer.CreateEdit();
+
+                if (emptySelection)
+                {
                     string text = "#if " + _selectedTechnology + Environment.NewLine + Environment.NewLine;
 
                     if (_includeEndIfComment)
@@ -208,40 +236,9 @@ namespace BISim.Technologicator
                     edit.Insert(selStart, text);
                     edit.Apply();
                 }
-
-            }
-        }
-
-        private void ChangeTechCallback(object sender, EventArgs e)
-        {
-            SelectLines();
-
-            IVsTextView textView;
-            if (_textManager.GetActiveView(1, null, out textView) == 0)
-            {
-                TextSpan[] span = new TextSpan[1];
-                int selStart, selEnd, temp;
-
-                textView.GetSelectionSpan(span);
-                textView.GetNearestPosition(span[0].iStartLine, span[0].iStartIndex, out selStart, out temp);
-                textView.GetNearestPosition(span[0].iEndLine, span[0].iEndIndex, out selEnd, out temp);
-
-                IVsTextLines lines;
-                if (textView.GetBuffer(out lines) == 0)
+                else
                 {
-
-                    var linesTextBuffer = lines as IVsTextBuffer;
-
-                    ITextBuffer buffer = _adapters.GetDataBuffer(linesTextBuffer);
-
-                    string currentCode = buffer.CurrentSnapshot.GetText(selStart, selEnd - selStart);
-
-                    ITextEdit edit = buffer.CreateEdit();
-                    edit.Delete(selStart, selEnd - selStart);
-
                     string text = "#if " + _selectedTechnology + Environment.NewLine +
-                        currentCode + Environment.NewLine +
-                        "#else" + Environment.NewLine +
                         currentCode + Environment.NewLine;
 
                     if (_includeEndIfComment)
@@ -249,50 +246,65 @@ namespace BISim.Technologicator
                     else
                         text += "#endif" + Environment.NewLine;
 
+                    edit.Delete(selStart, selEnd - selStart);
                     edit.Insert(selStart, text);
                     edit.Apply();
-                }              
+                }
+            }
+
+        }
+
+        private void ChangeTechCallback(object sender, EventArgs e)
+        {
+            ITextBuffer buffer;
+            int selStart, selEnd;
+            string currentCode;
+            bool emptySelection;
+
+            if (GetBufferAndSelection(out buffer, out selStart, out selEnd, out currentCode, out emptySelection))
+            {            
+                ITextEdit edit = buffer.CreateEdit();
+                edit.Delete(selStart, selEnd - selStart);
+
+                string text = "#if " + _selectedTechnology + Environment.NewLine +
+                    currentCode + Environment.NewLine +
+                    "#else" + Environment.NewLine +
+                    currentCode + Environment.NewLine;
+
+                if (_includeEndIfComment)
+                    text += "#endif // " + _selectedTechnology.Substring(1) + Environment.NewLine;
+                else
+                    text += "#endif" + Environment.NewLine;
+
+                edit.Insert(selStart, text);
+                edit.Apply();          
             }
         }
 
         private void RemoveTechCallback(object sender, EventArgs e)
         {
-            SelectLines();
+            ITextBuffer buffer;
+            int selStart, selEnd;
+            string currentCode;
+            bool emptySelection;
 
-            IVsTextView textView;
-            if (_textManager.GetActiveView(1, null, out textView) == 0)
+            if (GetBufferAndSelection(out buffer, out selStart, out selEnd, out currentCode, out emptySelection))
             {
-                TextSpan[] span = new TextSpan[1];
-                int selStart, selEnd, temp;
+                ITextEdit edit = buffer.CreateEdit();
+                edit.Delete(selStart, selEnd - selStart);
 
-                textView.GetSelectionSpan(span);
-                textView.GetNearestPosition(span[0].iStartLine, span[0].iStartIndex, out selStart, out temp);
-                textView.GetNearestPosition(span[0].iEndLine, span[0].iEndIndex, out selEnd, out temp);
+                string text = "#if !" + _selectedTechnology + Environment.NewLine +
+                    currentCode + Environment.NewLine;
 
-                IVsTextLines lines;
-                if (textView.GetBuffer(out lines) == 0)
-                {
-                    var linesTextBuffer = lines as IVsTextBuffer;
+                if (_includeEndIfComment)
+                    text += "#endif // !" + _selectedTechnology.Substring(1) + Environment.NewLine;
+                else
+                    text += "#endif" + Environment.NewLine;
 
-                    ITextBuffer buffer = _adapters.GetDataBuffer(linesTextBuffer);
-
-                    string currentCode = buffer.CurrentSnapshot.GetText(selStart, selEnd - selStart);
-
-                    ITextEdit edit = buffer.CreateEdit();
-                    edit.Delete(selStart, selEnd - selStart);
-
-                    string text = "#if !" + _selectedTechnology + Environment.NewLine +
-                        currentCode + Environment.NewLine;
-
-                    if (_includeEndIfComment)
-                        text += "#endif // !" + _selectedTechnology.Substring(1) + Environment.NewLine;
-                    else
-                        text += "#endif" + Environment.NewLine;
-
-                    edit.Insert(selStart, text);
-                    edit.Apply();
-                }
+                edit.Insert(selStart, text);
+                edit.Apply();
             }
+
         }
 
         private void EndIfCallback(object sender, EventArgs e)
@@ -300,13 +312,14 @@ namespace BISim.Technologicator
             _includeEndIfComment = !_includeEndIfComment;
         }
 
-        private void SelectLines()
+        private bool SelectLines()
         {
             EnvDTE.TextSelection ts = _dte.ActiveWindow.Selection as EnvDTE.TextSelection;
 
             if (ts.IsEmpty)
             {
                 ts.SelectLine();
+                return true;
             }
             else 
             {
@@ -327,6 +340,8 @@ namespace BISim.Technologicator
 
                 ts.GotoLine(startLine, true);
                 ts.MoveToLineAndOffset(endLine, endChar, true);
+
+                return false;
             }
         }
 
