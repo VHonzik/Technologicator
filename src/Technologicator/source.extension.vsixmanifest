@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="97b299aa-f3d1-4c5d-bf2f-918731fffb9a" Version="1.1" Language="en-US" Publisher="VHonzik (BISIM)" />
+    <Identity Id="97b299aa-f3d1-4c5d-bf2f-918731fffb9a" Version="1.2" Language="en-US" Publisher="VHonzik (BISIM)" />
     <DisplayName>Technologicator</DisplayName>
     <Description>Tools for easy manipulation of VBS technologies.</Description>
   </Metadata>
